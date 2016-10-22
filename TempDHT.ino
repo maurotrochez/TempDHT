@@ -5,7 +5,9 @@
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
 
-ESP8266WiFiMulti WiFiMulti;
+const char* ssid = "DIRECT-AP[TV][LG]32LF585D-DE";
+const char* password = "...";
+String url = "http://192.168.16.20:5000/api/v1/";
 
 #define DHTPIN 13     // what digital pin we're connected to
 #define PIN_SCE   12 //pin GPIO12 ON ESP , pin SCE ON LCD
@@ -258,7 +260,15 @@ void LCDInit(void) {
 void setup() {
   Serial.begin(9600);
   Serial.println("DHT11 test!");
-
+  Serial.println("Connecting to wifi");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  if(WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.println("WiFi Connect Failed! Rebooting...");
+    delay(1000);
+    ESP.restart();
+  }
+  Serial.println(WiFi.localIP());
   LCDInit(); //Init the LCD
   LCDBitmap(logo); // display Bitcoin Logo
   delay(3000);
@@ -279,21 +289,21 @@ void setup() {
   gotoXY(0, 2);
   LCDString("Connecting to wifi"); 
   LCDClear();
-  WiFiMulti.addAP("ssid", "pass");
+  //WiFiMulti.addAP("DIRECT-AP[TV][LG]32LF585D-DE", "1151942899");
   delay(2000);
 }
-
+float before_temp = 0;
 void loop() {
-  if (WiFiMulti.run() != WL_CONNECTED){
-    return;
-  }
+  // Wait a few seconds between measurements.
+  delay(3000);
+  //if (WiFiMulti.run() != WL_CONNECTED){
+  //  Serial.print("There are not network");
+  //  return;
+  //}
   HTTPClient http;
 
   Serial.print("[HTTP] begin...\n");
-  // configure traged server and url
-  //http.begin("https://192.168.1.12/test.html", "7a 9c f4 db 40 d3 62 5a 6e 21 bc 5c cc 66 c8 3e a1 45 59 38"); //HTTPS
-  //http.begin("http://192.168.43.74:5000/api/v1/users/"); //HTTP
-  http.begin("http://www.google.com"); //HTTP
+  http.begin(url+"temperature"); //HTTP
 
   Serial.print("[HTTP] GET...\n");
   // start connection and send HTTP header
@@ -314,8 +324,7 @@ void loop() {
   }
 
   http.end();
-  // Wait a few seconds between measurements.
-  delay(3000);
+  
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
@@ -340,6 +349,20 @@ void loop() {
   //float hif = dht.computeHeatIndex(f, h);
   // Compute heat index in Celsius (isFahreheit = false)
   float hic = dht.computeHeatIndex(t, h, false);
+
+  if(before_temp != t){
+    before_temp = t;
+    http.begin(url+"registers");
+    http.addHeader("Content-type", "application/json");
+    //String payload = String("{ \"d\": {\"aMessage\": ") + millis()/1000 + "} }";  
+    String payload = String("{ \"temperature\": ") + t + String(", \"humidity\": ") + h + " }"; 
+    Serial.println(url+"registers");
+    Serial.print("POST payload: "); Serial.println(payload);
+    int httpCode = http.POST(payload);
+    Serial.print("HTTP POST Response: "); Serial.println(httpCode);
+    http.end();
+    delay(10000);
+  }
 
   Serial.print("Humidity: ");
   Serial.print(h);
