@@ -5,9 +5,10 @@
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
 
-const char* ssid = "DIRECT-AP[TV][LG]32LF585D-DE";
-const char* password = "...";
-String url = "http://192.168.16.20:5000/api/v1/";
+const char* ssid = "UNIAJC_ESTUDIANTES";
+const char* password = "UniajcWiFi2014";
+String url = "http://10.10.28.245:3000/";
+
 
 #define DHTPIN 13     // what digital pin we're connected to
 #define PIN_SCE   12 //pin GPIO12 ON ESP , pin SCE ON LCD
@@ -15,6 +16,8 @@ String url = "http://192.168.16.20:5000/api/v1/";
 #define PIN_DC    14 //pin GPIO14 on ESP , pin DC on LCD
 #define PIN_SDIN  4 //pin GPIO4 on ESP , pin SDIN on LCD
 #define PIN_SCLK  5 //pin GPIO5 on ESP  , pin SLCK on LCD
+
+#define PIN_RELE 10
 
 #define DHTTYPE DHT11   // DHT 11
 
@@ -261,6 +264,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("DHT11 test!");
   Serial.println("Connecting to wifi");
+  pinMode(PIN_RELE, OUTPUT);
+  digitalWrite(PIN_RELE, LOW);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   if(WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -352,11 +357,11 @@ void loop() {
 
   if(before_temp != t){
     before_temp = t;
-    http.begin(url+"registers");
+    http.begin(url+"publish");
     http.addHeader("Content-type", "application/json");
     //String payload = String("{ \"d\": {\"aMessage\": ") + millis()/1000 + "} }";  
-    String payload = String("{ \"temperature\": ") + t + String(", \"humidity\": ") + h + " }"; 
-    Serial.println(url+"registers");
+    String payload = String("{ \"tagId\": \"SNSR-01\"") + String(", \"valores\": ") + String("{ \"Temperatura\": ") + t + String(", \"Humedad\": ") + h + " }" + " }"; 
+    Serial.println(url+"publish");
     Serial.print("POST payload: "); Serial.println(payload);
     int httpCode = http.POST(payload);
     Serial.print("HTTP POST Response: "); Serial.println(httpCode);
@@ -364,6 +369,13 @@ void loop() {
     delay(10000);
   }
 
+  if( t > 20 ){
+    digitalWrite(PIN_RELE, HIGH);
+  }
+  else {
+    digitalWrite(PIN_RELE, LOW);
+  }
+  
   Serial.print("Humidity: ");
   Serial.print(h);
   Serial.print(" %\t");
