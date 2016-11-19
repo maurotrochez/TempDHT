@@ -7,10 +7,10 @@
 
 const char* ssid = "DIRECT-AP[TV][LG]32LF585D-DE";
 const char* password = "1151942899";
-String url = "http://10.10.28.245:3000/";
+String url = "http://192.168.16.22:3000/";
 
 String url_ifttt = "http://maker.ifttt.com/trigger/send_gmail/with/key/";
-String key_ifttt = "c7Lx88aUHoOujc8vVNVUIn8DBcd8FLFSzEcHoa-T1at";
+String key_ifttt = "bMYgl8Ysk3R9jaRec8l_MWRTodJpBXdFntbzOjB6MoB";
 
 #define DHTPIN 13     // what digital pin we're connected to
 #define PIN_SCE   12 //pin GPIO12 ON ESP , pin SCE ON LCD
@@ -299,7 +299,6 @@ void setup() {
   gotoXY(0, 2);
   LCDString("Connecting to wifi"); 
   LCDClear();
-  //WiFiMulti.addAP("DIRECT-AP[TV][LG]32LF585D-DE", "1151942899");
   delay(2000);
 }
 float before_temp = 0;
@@ -316,7 +315,6 @@ void loop() {
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
   // Read temperature as Fahrenheit (isFahrenheit = true)
-  //float f = dht.readTemperature(true);
   
   // Check if any reads failed and exit early (to try again).
   if (isnan(h) || isnan(t)) {
@@ -330,8 +328,6 @@ void loop() {
   char hstr[8];
   dtostrf(h, 6, 2, hstr);
 
-  // Compute heat index in Fahrenheit (the default)
-  //float hif = dht.computeHeatIndex(f, h);
   // Compute heat index in Celsius (isFahreheit = false)
   float hic = dht.computeHeatIndex(t, h, false);
 
@@ -357,24 +353,18 @@ void loop() {
   Serial.print("Temperature: ");
   Serial.print(t);
   Serial.print(" *C ");
-  //Serial.print(f);
-  //Serial.print(" *F\t");
   Serial.print("Heat index: ");
   Serial.print(hic);
   Serial.println(" *C ");
-  //Serial.print(hif);
-  //Serial.println(" *F");
-  //blink();
 
-  
   delay(3000);
 }
 
 void saveTemperature(float t, float h){
+  //This method allows send http requests with the info
   HTTPClient http;
   http.begin(url+"publish");
   http.addHeader("Content-type", "application/json");
-  //String payload = String("{ \"d\": {\"aMessage\": ") + millis()/1000 + "} }";  
   String payload = String("{ \"tagId\": \"SNSR-01\"") + String(", \"valores\": ") + String("{ \"Temperatura\": ") + t + String(", \"Humedad\": ") + h + " }" + " }"; 
   Serial.println(url+"publish");
   Serial.print("POST payload: "); Serial.println(payload);
@@ -385,6 +375,7 @@ void saveTemperature(float t, float h){
 }
 
 void send_mail(float t, float h){
+  //this method allows send http request to ifttt's plataform
   HTTPClient http;
   http.begin(url_ifttt+key_ifttt);
   http.addHeader("Content-type", "application/json");
@@ -397,6 +388,7 @@ void send_mail(float t, float h){
 }
 
 void rele(float t, float h){
+  //this method validates the temperature for activate rele or send mail
   if( t > 28 ){
     digitalWrite(PIN_RELE, HIGH);
     send_mail(t, h);
@@ -407,6 +399,7 @@ void rele(float t, float h){
 }
 
 void getTemperature(){
+  //this method allows get the last temperature from the server
   HTTPClient http;
 
   Serial.print("[HTTP] begin...\n");
@@ -433,12 +426,3 @@ void getTemperature(){
   http.end();
 }
 
-void blink(){
-//  digitalWrite(LED, HIGH);
-//  delay(500);
-//  digitalWrite(LED, LOW);
-//  delay(500);
-//  digitalWrite(LED, HIGH);
-//  delay(500);
-//  digitalWrite(LED, LOW);
-}
