@@ -5,8 +5,8 @@
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
 
-const char* ssid = "DIRECT-AP[TV][LG]32LF585D-DE";
-const char* password = "1151942899";
+const char* ssid = "ssid";
+const char* password = "pass";
 String url = "http://192.168.16.22:3000/";
 
 String url_ifttt = "http://maker.ifttt.com/trigger/send_gmail/with/key/";
